@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.0.0.min.js"></script>
+    <title>LIGTH WEBSOCKET EXAMPLE</title>
+    <script src="/node_modules/light-json/client.js"></script>
+    <script type="module">
+      
+      document.addEventListener("DOMContentLoaded", function(){
+        var type = {}
+        var socketURL = "ws://localhost:8080/light";
+        var socket = new WebSocket(socketURL);
+        socket.binaryType = 'arraybuffer';
+        socket.onopen = function(evt) {
+          console.log('open', evt);
+          socket.send(JSON.stringify({key:'user'}))
+        };
+        socket.onclose = function(evt) {
+          console.log('close',evt);
+        }
+        socket.onerror = function(evt) {
+          console.log('error',evt);
+        }
+        socket.onmessage = function(evt) {
+          console.log('message', evt);
+          if(evt.data instanceof ArrayBuffer) {
+            console.log(evt.data);
+          } else if(typeof evt.data == 'string') {
+            var ljson = JSON.parse(evt.data);
+            type[ljson.key] = new LJSON({key:'string', data:ljson.schema})
+          }
+        }
+      });
+    </script>
+</head>
+
+<body>
+    <div id="app">
+      <ul id="data">
+
+      </ul>
+      <button id="subscribe">SUBSCRIBE</button>
+      <button id="unsubscribe">UNSUBSCRIBE</button>
+    </div>
+    <!-- built files will be auto injected -->
+</body>
+
+</html>
