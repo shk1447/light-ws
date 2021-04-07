@@ -23,7 +23,7 @@ var ws = new LightWS({
 ws.listen({noServer:true,path:'/light'}, server);
 
 setInterval(function() {
-  ws.sendKey('user',{
+  ws.sendData('user',{
     id:'aaaa',
     name:'aaaa'
   })

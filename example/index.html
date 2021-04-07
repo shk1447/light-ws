@@ -7,7 +7,11 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <script src="https://code.jquery.com/jquery-3.0.0.min.js"></script>
     <title>LIGTH WEBSOCKET EXAMPLE</title>
-    <script src="/node_modules/light-json/client.js"></script>
+    <script type="module" src="/node_modules/light-json/client.js"></script>
+    <script type="module">
+      import client from '/client.js';
+      console.log(client);
+    </script>
     <script type="module">
       
       document.addEventListener("DOMContentLoaded", function(){
@@ -17,7 +21,7 @@
         socket.binaryType = 'arraybuffer';
         socket.onopen = function(evt) {
           console.log('open', evt);
-          socket.send(JSON.stringify({key:'user'}))
+          socket.send(JSON.stringify({key:'user', event:'on'}))
         };
         socket.onclose = function(evt) {
           console.log('close',evt);
@@ -28,10 +32,20 @@
         socket.onmessage = function(evt) {
           console.log('message', evt);
           if(evt.data instanceof ArrayBuffer) {
-            console.log(evt.data);
+            var bufView = new Uint8Array(evt.data);
+            var key = "";
+            for(var i = 0; i < bufView.length - 2; i++) {
+              if(bufView[i] == 124 && bufView[i] == bufView[i+1] && bufView[i] == bufView[i+2]) {
+                bufView = bufView.slice(i+3, bufView.length)
+                break;
+              }
+              key += String.fromCharCode(bufView[i]);
+            }
+            var result = type[key].parse(bufView);
+            console.log(result);
           } else if(typeof evt.data == 'string') {
             var ljson = JSON.parse(evt.data);
-            type[ljson.key] = new LJSON({key:'string', data:ljson.schema})
+            type[ljson.key] = new LJSON(ljson.schema)
           }
         }
       });
