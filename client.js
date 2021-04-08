@@ -100,11 +100,9 @@ export default {
   },
   on: function (key, func) {
     EventHandler.on(key, func);
-    socket.send(MessageSchema.binarify({ key: key, event: 'on' }))
   },
   off: function (key, func) {
-    EventHandler.off(key, func)
-    socket.send(MessageSchema.binarify({ key: key, event: 'off' }))
+    EventHandler.off(key, func);
   },
   connect: function (url, callback) {
     socket = new WebSocket(url);

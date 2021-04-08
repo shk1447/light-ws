@@ -8,6 +8,46 @@ const MessageSchema = new LightJSON({
   data: 'Buffer'
 });
 module.exports = function (types) {
+  // 내부 컴포넌트간의 이벤트 정의 위한 핸들러
+  const EventHandler = (function () {
+    var handlers = {};
+
+    function on(evt, func) {
+      handlers[evt] = handlers[evt] || [];
+      handlers[evt].push(func);
+    }
+
+    function off(evt, func) {
+      var handler = handlers[evt];
+      if (handler) {
+        for (var i = 0; i < handler.length; i++) {
+          if (handler[i] === func) {
+            handler.splice(i, 1);
+            return;
+          }
+        }
+      }
+    }
+
+    function emit(evt, args) {
+      if (handlers[evt]) {
+        for (var i = 0; i < handlers[evt].length; i++) {
+          try {
+            handlers[evt][i].apply(null, args);
+          } catch (err) {
+            console.log("common.events.emit error: [" + evt + "] " + (err.toString()));
+            console.log(err);
+          }
+        }
+      }
+    }
+    return {
+      on: on,
+      off: off,
+      emit: emit
+    }
+  })();
+
   //console.log(EventHandler);
   var wss;
   this.types = {};
@@ -89,17 +129,9 @@ module.exports = function (types) {
 
         })
         ws.on('message', (message) => {
-          message = MessageSchema.parse(message);
-
-          if (message.key && message.event) {
-            if (message.event == 'on' && !ws['keys'].includes(message.key)) {
-              ws['keys'].push(message.key);
-              if (message.schema) this.setSchema(message.key, message.schema);
-            }
-            if (message.event == 'off' && ws['keys'].includes(message.key)) ws['keys'].splice(ws['keys'].indexOf(message.key), 1);
-
-            //if (message.event == 'emit') EventHandler.emit(message.key)
-          }
+          var result = separate(message);
+          var json = this.types[result.key].parse(result.buffer)
+          EventHandler.emit(result.key, [json])
         });
         ws.on('close', () => {
 
