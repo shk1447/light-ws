@@ -1,8 +1,12 @@
 const url = require('url');
 const WebSocket = require('ws');
 const LightJSON = require('light-json');
-const { Common, EventHandler } = require('./common/Utils');
-
+const MessageSchema = new LightJSON({
+  key: 'string',
+  event: 'string',
+  schema: 'json',
+  data: 'Buffer'
+});
 module.exports = function (types) {
   //console.log(EventHandler);
   var wss;
@@ -16,9 +20,25 @@ module.exports = function (types) {
     })
   }
 
-  var setDataWithHeader = (key, data) => {
+  var separate = (buffer) => {
+    var bufView = new Uint8Array(buffer);
+    var key = "";
+    for (var i = 0; i < bufView.length - 2; i++) {
+      if (bufView[i] == 124 && bufView[i] == bufView[i + 1] && bufView[i] == bufView[i + 2]) {
+        bufView = bufView.slice(i + 3, bufView.length)
+        break;
+      }
+      key += String.fromCharCode(bufView[i]);
+    }
+
+    return {
+      key: key,
+      buffer: bufView.buffer
+    }
+  }
+
+  var merge = (key, buffer) => {
     var _header = key + '|||';
-    var ljson = this.types[key].instance.binarify(data);
     var header = new ArrayBuffer(_header.length);
 
     var bufView = new Uint8Array(header);
@@ -26,10 +46,10 @@ module.exports = function (types) {
       bufView[i] = _header.charCodeAt(i)
     }
 
-    var tmp = new Uint8Array(header.byteLength + ljson.byteLength);
+    var tmp = new Uint8Array(header.byteLength + buffer.byteLength);
 
     tmp.set(new Uint8Array(header), 0);
-    tmp.set(new Uint8Array(ljson), header.byteLength);
+    tmp.set(new Uint8Array(buffer), header.byteLength);
 
     return tmp.buffer;
   }
@@ -54,7 +74,7 @@ module.exports = function (types) {
       wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
           if (client.keys.length > 0 && client.keys.includes(key)) {
-            var sendBuffer = setDataWithHeader(key, data);
+            var sendBuffer = merge(key, data);
             client.send(sendBuffer);
           }
         }
@@ -63,7 +83,7 @@ module.exports = function (types) {
     broadcast: (key, data) => {
       wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
-          var sendBuffer = setDataWithHeader(key, data);
+          var sendBuffer = merge(key, data);
 
           client.send(sendBuffer);
         }
@@ -78,12 +98,12 @@ module.exports = function (types) {
 
         })
         ws.on('message', (message) => {
-          message = JSON.parse(message);
+          message = MessageSchema.parse(message);
+
           if (message.key && message.event) {
             if (message.event == 'on' && !ws['keys'].includes(message.key)) {
               ws['keys'].push(message.key);
               if (message.schema) this.setSchema(message.key, message.schema);
-              ws.send(JSON.stringify({ key: message.key, schema: this.types[message.key].schema }));
             }
             if (message.event == 'off' && ws['keys'].includes(message.key)) ws['keys'].splice(ws['keys'].indexOf(message.key), 1);
 
