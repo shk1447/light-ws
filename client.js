@@ -93,13 +93,10 @@ const MessageSchema = new LightJSON({
 });
 export default {
   setSchema: function (key, schema) {
-    types[key] = {
-      schema: schema,
-      instance: new LightJSON({
-        key: 'string',
-        data: schema
-      })
-    }
+    types[key] = new LightJSON(schema)
+  },
+  sendData(key, data) {
+    socket.send(Utils.merge(key, types[key].binarify(data)));
   },
   on: function (key, func) {
     EventHandler.on(key, func);

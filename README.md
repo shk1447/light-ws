@@ -30,14 +30,16 @@ var ws = new LWS({
 ws.listen({noServer:true,path:'/light'}, server);
 ```
 ### Browser
-
 #### Import Module
 ```js
 import LWS from 'light-ws';
-
+LWS.setSchema('user', {
+  id:'string',
+  name:'string'
+})
 LWS.connect('ws://localhost:8080/light', function(e) {
   if(e.type == 'open') {
-    client.on('user', function(data) {
+    LWS.on('user', function(data) {
       console.log(data);
     })
   }

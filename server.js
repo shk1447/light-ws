@@ -13,10 +13,7 @@ module.exports = function (types) {
   this.types = {};
   if (types) {
     Object.keys(types).forEach((key) => {
-      this.types[key] = {
-        schema: types[key],
-        instance: new LightJSON(types[key])
-      }
+      this.types[key] = new LightJSON(types[key])
     })
   }
 
@@ -62,19 +59,13 @@ module.exports = function (types) {
       return this.types[key];
     },
     setSchema: (key, schema) => {
-      this.types[key] = {
-        schema: schema,
-        instance: new LightJSON({
-          key: 'string',
-          data: schema
-        })
-      }
+      this.types[key] = new LightJSON(schema)
     },
     sendData: (key, data) => {
       wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
           if (client.keys.length > 0 && client.keys.includes(key)) {
-            var sendBuffer = merge(key, data);
+            var sendBuffer = merge(key, this.types[key].binarify(data));
             client.send(sendBuffer);
           }
         }
