@@ -85,70 +85,69 @@ module.exports = function (types) {
     })
   }
 
-  return {
-    getTypes: () => {
-      return this.types;
-    },
-    getSchema: (key) => {
-      return this.types[key];
-    },
-    setSchema: (key, schema) => {
-      this.types[key] = new LightJSON(schema)
-    },
-    sendData: (key, data) => {
-      wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          if (client.keys.length > 0 && client.keys.includes(key)) {
-            var sendBuffer = merge(key, this.types[key].binarify(data));
-            client.send(sendBuffer);
-          }
-        }
-      })
-    },
-    broadcast: (key, data) => {
-      wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          var sendBuffer = merge(key, this.types[key].binarify(data));
 
+  this.getTypes = () => {
+    return this.types;
+  };
+  this.getSchema = (key) => {
+    return this.types[key];
+  };
+  this.setSchema = (key, schema) => {
+    this.types[key] = new LightJSON(schema)
+  };
+  this.sendData = (key, data) => {
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        if (client.keys.length > 0 && client.keys.includes(key)) {
+          var sendBuffer = merge(key, this.types[key].binarify(data));
           client.send(sendBuffer);
         }
-      })
-    },
-    on: EventHandler.on,
-    off: EventHandler.off,
-    emit: EventHandler.emit,
-    listen: (options, server) => {
-      wss = new WebSocket.Server(options);
-
-      wss.on('connection', function (ws, req) {
-        ws['keys'] = [];
-        ws.on('open', () => {
-
-        })
-        ws.on('message', (message) => {
-          var result = separate(message);
-          var json = this.types[result.key].parse(result.buffer)
-          EventHandler.emit(result.key, [json])
-        });
-        ws.on('close', () => {
-
-        })
-      }.bind(this))
-
-      if (options.noServer) {
-        server.on('upgrade', function (request, socket, head) {
-          const pathname = url.parse(request.url).pathname;
-          if (pathname === options.path) {
-            wss.handleUpgrade(request, socket, head, function (ws) {
-              wss.emit('connection', ws, request);
-            })
-          } else {
-            socket.destory();
-          }
-        })
       }
+    })
+  };
+  this.broadcast = (key, data) => {
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        var sendBuffer = merge(key, this.types[key].binarify(data));
 
-      return wss;
+        client.send(sendBuffer);
+      }
+    })
+  };
+  this.on = EventHandler.on;
+  this.off = EventHandler.off;
+  this.emit = EventHandler.emit;
+  this.listen = (options, server) => {
+    wss = new WebSocket.Server(options);
+
+    wss.on('connection', function (ws, req) {
+      ws['keys'] = [];
+      ws.on('open', () => {
+
+      })
+      ws.on('message', (message) => {
+        var result = separate(message);
+        var json = this.types[result.key].parse(result.buffer)
+        EventHandler.emit(result.key, [json])
+      });
+      ws.on('close', () => {
+
+      })
+    }.bind(this))
+
+    if (options.noServer) {
+      server.on('upgrade', function (request, socket, head) {
+        const pathname = url.parse(request.url).pathname;
+        if (pathname === options.path) {
+          wss.handleUpgrade(request, socket, head, function (ws) {
+            wss.emit('connection', ws, request);
+          })
+        } else {
+          socket.destory();
+        }
+      })
     }
+
+    return wss;
   }
 }

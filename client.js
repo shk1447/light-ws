@@ -78,43 +78,42 @@ export default function (types) {
   var socket;
   this.types = {};
   if (types) {
-    Object.keys(types).forEach((key) => {
+    Object.keys(types).forEach(function (key) {
       this.types[key] = new LightJSON(types[key])
-    })
+    }.bind(this))
   }
 
-  return {
-    setSchema: function (key, schema) {
-      this.types[key] = new LightJSON(schema)
-    },
-    sendData(key, data) {
-      socket.send(merge(key, types[key].binarify(data)));
-    },
-    on: EventHandler.on,
-    off: EventHandler.off,
-    emit: EventHandler.emit,
-    connect: function (url, callback) {
-      socket = new WebSocket(url);
-      socket.binaryType = 'arraybuffer';
-      socket.onopen = function (evt) {
-        callback.apply(this, [evt])
-      };
-      socket.onclose = function (evt) {
-        callback.apply(this, [evt])
+  this.on = EventHandler.on;
+  this.off = EventHandler.off;
+  this.emit = EventHandler.emit;
+  this.setSchema = function (key, schema) {
+    this.types[key] = new LightJSON(schema)
+  };
+  this.sendData = function (key, data) {
+    socket.send(merge(key, types[key].binarify(data)));
+  };
+  this.connect = function (url, callback) {
+    socket = new WebSocket(url);
+    socket.binaryType = 'arraybuffer';
+    socket.onopen = function (evt) {
+      callback.apply(this, [evt])
+    }.bind(this)
+    socket.onclose = function (evt) {
+      callback.apply(this, [evt])
+    }.bind(this)
+    socket.onerror = function (evt) {
+      callback.apply(this, [evt])
+    }.bind(this)
+    socket.onmessage = function (evt) {
+      if (evt.data instanceof ArrayBuffer) {
+        var result = separate(evt.data);
+        var json = this.types[result.key].parse(result.buffer)
+        EventHandler.emit(result.key, [json]);
+      } else {
+        console.log(evt.data);
       }
-      socket.onerror = function (evt) {
-        callback.apply(this, [evt])
-      }
-      socket.onmessage = function (evt) {
-        if (evt.data instanceof ArrayBuffer) {
-          var result = separate(evt.data);
-          var json = this.types[result.key].parse(result.buffer)
-          EventHandler.emit(result.key, [json]);
-        } else {
-          console.log(evt.data);
-        }
-      }
-      return socket;
-    }
-  }
+    }.bind(this)
+    return socket;
+  };
+
 }
