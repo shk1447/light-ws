@@ -1,4 +1,46 @@
-const Utils = (function () {
+
+import LightJSON from 'light-json';
+
+export default function (types) {
+  const EventHandler = (function () {
+    var handlers = {};
+
+    function on(evt, func) {
+      handlers[evt] = handlers[evt] || [];
+      handlers[evt].push(func);
+    }
+
+    function off(evt, func) {
+      var handler = handlers[evt];
+      if (handler) {
+        for (var i = 0; i < handler.length; i++) {
+          if (handler[i] === func) {
+            handler.splice(i, 1);
+            return;
+          }
+        }
+      }
+    }
+
+    function emit(evt, args) {
+      if (handlers[evt]) {
+        for (var i = 0; i < handlers[evt].length; i++) {
+          try {
+            handlers[evt][i].apply(null, args);
+          } catch (err) {
+            console.log("common.events.emit error: [" + evt + "] " + (err.toString()));
+            console.log(err);
+          }
+        }
+      }
+    }
+    return {
+      on: on,
+      off: off,
+      emit: emit
+    }
+  })();
+
   function separate(buffer) {
     var bufView = new Uint8Array(buffer);
     var key = "";
@@ -32,91 +74,47 @@ const Utils = (function () {
 
     return tmp.buffer;
   }
+
+  var socket;
+  this.types = {};
+  if (types) {
+    Object.keys(types).forEach((key) => {
+      this.types[key] = new LightJSON(types[key])
+    })
+  }
+
   return {
-    separate: separate,
-    merge: merge
-  }
-})();
-
-
-// 내부 컴포넌트간의 이벤트 정의 위한 핸들러
-const EventHandler = (function () {
-  var handlers = {};
-
-  function on(evt, func) {
-    handlers[evt] = handlers[evt] || [];
-    handlers[evt].push(func);
-  }
-
-  function off(evt, func) {
-    var handler = handlers[evt];
-    if (handler) {
-      for (var i = 0; i < handler.length; i++) {
-        if (handler[i] === func) {
-          handler.splice(i, 1);
-          return;
+    setSchema: function (key, schema) {
+      this.types[key] = new LightJSON(schema)
+    },
+    sendData(key, data) {
+      socket.send(merge(key, types[key].binarify(data)));
+    },
+    on: EventHandler.on,
+    off: EventHandler.off,
+    emit: EventHandler.emit,
+    connect: function (url, callback) {
+      socket = new WebSocket(url);
+      socket.binaryType = 'arraybuffer';
+      socket.onopen = function (evt) {
+        callback.apply(this, [evt])
+      };
+      socket.onclose = function (evt) {
+        callback.apply(this, [evt])
+      }
+      socket.onerror = function (evt) {
+        callback.apply(this, [evt])
+      }
+      socket.onmessage = function (evt) {
+        if (evt.data instanceof ArrayBuffer) {
+          var result = separate(evt.data);
+          var json = this.types[result.key].parse(result.buffer)
+          EventHandler.emit(result.key, [json]);
+        } else {
+          console.log(evt.data);
         }
       }
+      return socket;
     }
-  }
-
-  function emit(evt, args) {
-    if (handlers[evt]) {
-      for (var i = 0; i < handlers[evt].length; i++) {
-        try {
-          handlers[evt][i].apply(null, args);
-        } catch (err) {
-          console.log("common.events.emit error: [" + evt + "] " + (err.toString()));
-          console.log(err);
-        }
-      }
-    }
-  }
-  return {
-    on: on,
-    off: off,
-    emit: emit
-  }
-})();
-
-export { EventHandler, Utils }
-
-import LightJSON from 'light-json';
-
-var socket;
-var types = {};
-
-export default {
-  setSchema: function (key, schema) {
-    types[key] = new LightJSON(schema)
-  },
-  sendData(key, data) {
-    socket.send(Utils.merge(key, types[key].binarify(data)));
-  },
-  on: EventHandler.on,
-  off: EventHandler.off,
-  emit: EventHandler.emit,
-  connect: function (url, callback) {
-    socket = new WebSocket(url);
-    socket.binaryType = 'arraybuffer';
-    socket.onopen = function (evt) {
-      callback.apply(this, [evt])
-    };
-    socket.onclose = function (evt) {
-      callback.apply(this, [evt])
-    }
-    socket.onerror = function (evt) {
-      callback.apply(this, [evt])
-    }
-    socket.onmessage = function (evt) {
-      if (evt.data instanceof ArrayBuffer) {
-        var result = Utils.separate(evt.data);
-        var json = types[result.key].parse(result.buffer)
-        EventHandler.emit(result.key, [json]);
-      } else {
-        console.log(evt.data);
-      }
-    }
-    return socket;
   }
 }

@@ -43,15 +43,6 @@ module.exports = function (types) {
     }
   })();
 
-  //console.log(EventHandler);
-  var wss;
-  this.types = {};
-  if (types) {
-    Object.keys(types).forEach((key) => {
-      this.types[key] = new LightJSON(types[key])
-    })
-  }
-
   var separate = (buffer) => {
     var bufView = new Uint8Array(buffer);
     var key = "";
@@ -86,6 +77,14 @@ module.exports = function (types) {
     return tmp.buffer;
   }
 
+  var wss;
+  this.types = {};
+  if (types) {
+    Object.keys(types).forEach((key) => {
+      this.types[key] = new LightJSON(types[key])
+    })
+  }
+
   return {
     getTypes: () => {
       return this.types;
@@ -109,7 +108,7 @@ module.exports = function (types) {
     broadcast: (key, data) => {
       wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
-          var sendBuffer = merge(key, data);
+          var sendBuffer = merge(key, this.types[key].binarify(data));
 
           client.send(sendBuffer);
         }
