@@ -15,16 +15,16 @@ server.listen(8080, '0.0.0.0', function () {
 
 var ws = new LightWS({
   'user': {
-    id:'string',
-    name:'string'
+    id: 'string',
+    name: 'string'
   }
 })
 
-ws.listen({noServer:true,path:'/light'}, server);
+ws.listen({ noServer: true, path: '/light' }, server);
 
-setInterval(function() {
-  ws.sendData('user',{
-    id:'aaaa',
-    name:'aaaa'
+setInterval(function () {
+  ws.sendData('user', {
+    id: 'aaaa',
+    name: 'aaaa'
   })
-},1000)
+}, 1000)

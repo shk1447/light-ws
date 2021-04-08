@@ -2,6 +2,7 @@
   "name": "light-ws",
   "version": "0.0.1",
   "description": "",
+  "type": "module",
   "main": "index.js",
   "dependencies": {
     "light-json": "0.0.8",
