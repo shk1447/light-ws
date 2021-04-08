@@ -85,12 +85,7 @@ import LightJSON from 'light-json';
 
 var socket;
 var types = {};
-const MessageSchema = new LightJSON({
-  key: 'string',
-  event: 'string',
-  schema: 'json',
-  data: 'Buffer'
-});
+
 export default {
   setSchema: function (key, schema) {
     types[key] = new LightJSON(schema)
@@ -98,12 +93,9 @@ export default {
   sendData(key, data) {
     socket.send(Utils.merge(key, types[key].binarify(data)));
   },
-  on: function (key, func) {
-    EventHandler.on(key, func);
-  },
-  off: function (key, func) {
-    EventHandler.off(key, func);
-  },
+  on: EventHandler.on,
+  off: EventHandler.off,
+  emit: EventHandler.emit,
   connect: function (url, callback) {
     socket = new WebSocket(url);
     socket.binaryType = 'arraybuffer';

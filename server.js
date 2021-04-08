@@ -1,12 +1,7 @@
 const url = require('url');
 const WebSocket = require('ws');
 const LightJSON = require('light-json');
-const MessageSchema = new LightJSON({
-  key: 'string',
-  event: 'string',
-  schema: 'json',
-  data: 'Buffer'
-});
+
 module.exports = function (types) {
   // 내부 컴포넌트간의 이벤트 정의 위한 핸들러
   const EventHandler = (function () {
@@ -120,6 +115,9 @@ module.exports = function (types) {
         }
       })
     },
+    on: EventHandler.on,
+    off: EventHandler.off,
+    emit: EventHandler.emit,
     listen: (options, server) => {
       wss = new WebSocket.Server(options);
 
