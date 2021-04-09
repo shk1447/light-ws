@@ -33,17 +33,14 @@ ws.listen({noServer:true,path:'/light'}, server);
 #### Import Module
 ```js
 import LWS from 'light-ws';
-LWS.setSchema('user', {
-  id:'string',
-  name:'string'
-})
-LWS.connect('ws://localhost:8080/light', function(e) {
-  if(e.type == 'open') {
-    LWS.on('user', function(data) {
+var ws = new LWS({ 'user': { id: 'string', name: 'string' } });
+ws.connect('ws://localhost:8080/light.sock', function (e) {
+  if (e.type == 'open') {
+    ws.on('user', function (data) {
       console.log(data);
     })
   }
-})
+});
 ```
 
 ## Furture Feature
