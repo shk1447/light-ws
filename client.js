@@ -86,10 +86,13 @@ export default function (types) {
   this.on = EventHandler.on;
   this.off = EventHandler.off;
   this.emit = EventHandler.emit;
+  this.getSchema = (key) => {
+    return this.types[key];
+  };
   this.setSchema = function (key, schema) {
     this.types[key] = new LightJSON(schema)
   };
-  this.sendData = function (key, data) {
+  this.send = function (key, data) {
     socket.send(merge(key, this.types[key].binarify(data)));
   };
   this.connect = function (url, callback) {
@@ -108,9 +111,7 @@ export default function (types) {
       if (evt.data instanceof ArrayBuffer) {
         var result = separate(evt.data);
         var json = this.types[result.key].parse(result.buffer)
-        EventHandler.emit(result.key, [json]);
-      } else {
-        console.log(evt.data);
+        EventHandler.emit(result.key, [json, socket]);
       }
     }.bind(this)
     return socket;

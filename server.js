@@ -85,54 +85,50 @@ module.exports = function (types) {
     })
   }
 
-
-  this.getTypes = () => {
-    return this.types;
-  };
   this.getSchema = (key) => {
     return this.types[key];
   };
   this.setSchema = (key, schema) => {
     this.types[key] = new LightJSON(schema)
   };
-  this.sendData = (key, data) => {
+  this.send = (key, data, to) => {
     wss.clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
-        if (client.keys.length > 0 && client.keys.includes(key)) {
+        if(to) {
+          Object.keys(to).forEach((channel) => {
+            if(client.hasOwnProperty(channel) && client[channel] == to[channel]) {
+              var sendBuffer = merge(key, this.types[key].binarify(data));
+              client.send(sendBuffer);
+            }
+          })
+        } else {
           var sendBuffer = merge(key, this.types[key].binarify(data));
           client.send(sendBuffer);
         }
       }
     })
   };
-  this.broadcast = (key, data) => {
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        var sendBuffer = merge(key, this.types[key].binarify(data));
-
-        client.send(sendBuffer);
-      }
-    })
-  };
   this.on = EventHandler.on;
   this.off = EventHandler.off;
   this.emit = EventHandler.emit;
-  this.listen = (options, server) => {
+  this.listen = (options, server, callback) => {
     wss = new WebSocket.Server(options);
 
     wss.on('connection', function (ws, req) {
-      ws['keys'] = [];
-      ws.on('open', () => {
-
+      ws.on('open', (evt) => {
+        
       })
       ws.on('message', (message) => {
-        var result = separate(message);
-        var json = this.types[result.key].parse(result.buffer)
-        EventHandler.emit(result.key, [json])
+        if(message instanceof Buffer) {
+          var result = separate(message);
+          var json = this.types[result.key].parse(result.buffer)
+          EventHandler.emit(result.key, [json, ws])
+        }
       });
-      ws.on('close', () => {
-
+      ws.on('close', (evt) => {
+        callback.apply(this, ['closed', ws]);
       })
+      callback.apply(this, ['connected', ws]);
     }.bind(this))
 
     if (options.noServer) {
