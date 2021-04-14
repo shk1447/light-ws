@@ -90,7 +90,7 @@ export default function (types) {
     this.types[key] = new LightJSON(schema)
   };
   this.sendData = function (key, data) {
-    socket.send(merge(key, types[key].binarify(data)));
+    socket.send(merge(key, this.types[key].binarify(data)));
   };
   this.connect = function (url, callback) {
     socket = new WebSocket(url);

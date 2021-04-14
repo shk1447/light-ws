@@ -1,6 +1,6 @@
 {
   "name": "light-ws",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "websocket with light-json",
   "main": "./index.js",
   "dependencies": {
