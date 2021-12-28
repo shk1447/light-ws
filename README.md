@@ -92,5 +92,55 @@ ws.connect('ws://localhost:8080/light.sock', function (e) {
 });
 ```
 
+## Available types
+
+### Basic types
+
+- 'uint': unsigned integer (between 0 and 2^53)
+- 'int': signed integer (between -2^53 and 2^53)
+- 'float': a 64-bit floating-point (the JavaScript number type)
+- 'string': a utf-8 string
+- 'Buffer': a Buffer instance
+- 'boolean': a boolean
+- 'regex': a JS RegExp instance
+- 'date': a JS Date instance
+- 'json': any data supported by [JSON format](http://json.org/). Read bellow for more
+- 'oid': mongodb ObjectId (see bellow)
+
+### Compound types
+
+A compound type is an object with (optional) fields. Those fields may be arrays, but with the restriction that every element has the same data schema.
+
+Examples:
+
+- Nested fields: `{a: {b: 'int', d: {e: 'int'}}}`
+- Optional fields: `{a: 'int', 'b?': 'int', 'c?': {d: 'int'}}`
+- Array fields: `{a: ['int']}`
+- All together now: `{'a?': [{'b?': 'int'}]}`
+
+### Array type
+
+An array type in which every element has the same data schema.
+
+Examples:
+
+- Int array: `['int']`
+- Object array: `[{v: 'int', f: 'string'}]`
+
+### JSON type
+
+As stated before, the js-binary requires the data to have a rather strict schema. But sometimes, part of the data may not fit this reality. In this case, you can fallback to JSON :)
+
+Of course, a JSON field will miss the point about space efficiency and data validation, but will gain in flexibility.
+
+### ObjectId type
+
+js-binary gives first-class support for mongodb ObjectId. But since js-binary doesn't (and shouldn't) depend on any peculiar mongodb driver, the rules for this type are:
+
+- Encoding: any object `o` is accepted, as long `new Buffer(String(o), 'hex')` yields a 12-byte Buffer
+- Decoding: returns a 24-char hex-encoded string
+
+This should be compatible with most ObjectId implementations on the wild
+
 ## Furture Feature
 - It is still in the basic implementation stage.
