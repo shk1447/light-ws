@@ -96,9 +96,11 @@ module.exports = function (types) {
       if (client.readyState === WebSocket.OPEN) {
         if(to) {
           Object.keys(to).forEach((channel) => {
-            if(client.hasOwnProperty(channel) && client[channel] == to[channel]) {
-              var sendBuffer = merge(key, this.types[key].binarify(data));
-              client.send(sendBuffer);
+            if(client.hasOwnProperty(channel)) {
+              if((Array.isArray(client[channel]) && client[channel].includes(to[channel])) || client[channel] === to[channel]) {
+                var sendBuffer = merge(key, this.types[key].binarify(data));
+                client.send(sendBuffer); 
+              }
             }
           })
         } else {
