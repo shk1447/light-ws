@@ -130,7 +130,7 @@ module.exports = function (types) {
         if(message instanceof Buffer) {
           var result = separate(message);
           var json = this.types[result.key].parse(result.buffer)
-          EventHandler.emit(result.key, [json, ws])
+          EventHandler.emit(result.key, [json, ws, req])
         }
       });
       ws.on('close', (evt) => {
