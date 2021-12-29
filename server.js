@@ -110,6 +110,12 @@ module.exports = function (types) {
       }
     })
   };
+
+  this.response = (key, data, to) => {
+    var sendBuffer = merge(key, this.types[key].binarify(data));
+    to.send(sendBuffer)
+  };
+  
   this.on = EventHandler.on;
   this.off = EventHandler.off;
   this.emit = EventHandler.emit;
